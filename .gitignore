@@ -1,0 +1,9 @@
+# Secret Credentials
+credentials.json
+.env
+
+# Massive Folders (Vercel installs these automatically)
+node_modules/
+
+# Mac Junk Files
+.DS_Store

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTIH User Dashboard</title>
+    
+    <!-- THE BOUNCER (USER LOCK) -->
+    <script>
+        const role = localStorage.getItem('rti_auth_role');
+        if (role !== 'admin' && role !== 'user') {
+            window.location.href = '/index.html'; // Kick them to login
+        }
+        function logout() {
+            localStorage.removeItem('rti_auth_role');
+            window.location.href = '/index.html';
+        }
+    </script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTIH Live Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen text-slate-800 p-6 md:p-12 relative">
+    <div class="max-w-7xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 mb-8 gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">RTIH Asset Management</h1>
+                    <span class="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse mt-1"></span>
+                </div>
+                <p class="text-sm text-slate-500 mt-1">Live facility asset allocations (Public View)</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase">Total Unique Locations</p>
+                <p id="stat-rooms" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase">Total Item Count</p>
+                <p id="stat-items" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase">Electronics</p>
+                <p id="stat-elec" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-xs font-medium text-slate-400 uppercase">Infrastructure/Furniture</p>
+                <p id="stat-furn" class="text-2xl font-bold text-slate-900 mt-1">0</p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Select Floor / Location</h2>
+            <div id="tabContainer" class="flex flex-wrap gap-2">
+                </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 mb-12 min-h-[400px]">
+            <div id="assetGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                </div>
+            
+            <div id="emptyState" class="hidden flex-col items-center justify-center h-64 text-center">
+                <svg class="w-12 h-12 text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                <p class="text-slate-500 font-medium">No assets assigned to this floor yet.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 m-4 relative border border-slate-200">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-900">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div class="text-center mb-6">
+                <span id="modalCategory" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200 mb-2 inline-block">Category</span>
+                <h3 id="modalAsset" class="text-2xl font-bold text-slate-900">Asset Name</h3>
+                <p id="modalLocation" class="text-sm text-slate-500 mt-1">Location</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="aspect-video bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center">
+                    <img id="modalPhoto" src="" alt="Asset" class="object-cover w-full h-full hidden">
+                    <span id="noPhotoText" class="text-xs font-bold text-slate-400 uppercase tracking-wider">No Photo Available</span>
+                </div>
+
+                <div class="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">System Tag</p>
+                        <p id="modalId" class="text-xs font-mono font-bold text-slate-600 bg-white px-2 py-1 rounded border border-slate-200 mb-2 inline-block">TAG-000</p>
+
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Total Floor Qty</p>
+                        <p id="modalQty" class="text-2xl font-bold text-slate-900 mt-0.5">0</p>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                        <img id="modalQr" src="" alt="QR Code" class="w-24 h-24">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let globalInventory = [];
+        let activeTab = null;
+
+        const eventSource = new EventSource('/api/inventory/stream');
+
+        eventSource.onmessage = function(event) {
+            globalInventory = JSON.parse(event.data);
+            renderDashboard(); 
+        };
+
+        function renderDashboard() {
+            let totalQty = 0; 
+            let categories = { Electronics: 0, Furniture: 0 }; 
+            let rooms = new Set();
+            
+            globalInventory.forEach(item => {
+                totalQty += item.quantity;
+                rooms.add(item.location);
+                if(categories[item.category] !== undefined) categories[item.category] += item.quantity;
+            });
+
+            document.getElementById('stat-rooms').innerText = rooms.size;
+            document.getElementById('stat-items').innerText = totalQty;
+            document.getElementById('stat-elec').innerText = categories['Electronics'] || 0;
+            document.getElementById('stat-furn').innerText = categories['Furniture'] || 0;
+
+            const locations = Array.from(rooms).sort();
+
+            if (!activeTab && locations.length > 0) {
+                activeTab = locations[0];
+            }
+
+            const tabContainer = document.getElementById('tabContainer');
+            tabContainer.innerHTML = '';
+            
+            locations.forEach(loc => {
+                const isActive = (loc === activeTab);
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-2.5 text-sm font-bold rounded-lg transition-all shadow-sm ${isActive ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'}`;
+                btn.innerText = loc;
+                btn.onclick = () => {
+                    activeTab = loc;
+                    renderDashboard(); 
+                };
+                tabContainer.appendChild(btn);
+            });
+
+            const grid = document.getElementById('assetGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const itemsOnFloor = globalInventory.filter(i => i.location === activeTab);
+
+            if (itemsOnFloor.length === 0) {
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                grid.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            // AGGREGATION: We strictly only pull the safe variables here!
+            const aggregatedItems = {};
+            itemsOnFloor.forEach(item => {
+                const key = item.asset.toLowerCase().trim();
+                
+                if (!aggregatedItems[key]) {
+                    aggregatedItems[key] = {
+                        id: item.id, 
+                        asset: item.asset,
+                        category: item.category,
+                        location: item.location,
+                        quantity: item.quantity,
+                        photoUrl: item.photoUrl
+                    };
+                } else {
+                    aggregatedItems[key].quantity += item.quantity;
+                    if (item.photoUrl && item.photoUrl.length > 2) {
+                        aggregatedItems[key].photoUrl = item.photoUrl;
+                    }
+                }
+            });
+
+            Object.values(aggregatedItems).forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 p-4 rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition cursor-pointer flex items-center justify-between group";
+                
+                const itemDataString = encodeURIComponent(JSON.stringify(item));
+                card.onclick = () => openModal(itemDataString);
+                
+                let photoHtml = `<div class="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center text-[8px] font-bold text-slate-400 uppercase text-center">No Img</div>`;
+                if (item.photoUrl && item.photoUrl.length > 2) {
+                    photoHtml = `<img src="${item.photoUrl}" class="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200">`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        ${photoHtml}
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-slate-900 truncate text-lg">${item.asset}</h4>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-slate-500 uppercase tracking-wider border border-slate-200 inline-block mt-1">${item.category}</span>
+                        </div>
+                    </div>
+                    <div class="text-right ml-4 pl-4 border-l border-slate-200 group-hover:border-slate-300 transition">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Qty</p>
+                        <p class="text-2xl font-bold text-slate-900 leading-none">${item.quantity}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openModal(itemDataString) {
+            const item = JSON.parse(decodeURIComponent(itemDataString));
+
+            // Strictly injecting only operational data
+            document.getElementById('modalAsset').innerText = item.asset;
+            document.getElementById('modalLocation').innerText = `Floor/Location: ${item.location}`;
+            document.getElementById('modalCategory').innerText = item.category;
+            document.getElementById('modalQty').innerText = item.quantity;
+            document.getElementById('modalId').innerText = `TAG-${item.id.toString().slice(-6)}`;
+
+            const photoEl = document.getElementById('modalPhoto');
+            const noPhotoEl = document.getElementById('noPhotoText');
+            if (item.photoUrl && item.photoUrl.length > 2) {
+                photoEl.src = item.photoUrl;
+                photoEl.classList.remove('hidden');
+                noPhotoEl.classList.add('hidden');
+            } else {
+                photoEl.classList.add('hidden');
+                noPhotoEl.classList.remove('hidden');
+            }
+
+            const scanLink = `${window.location.origin}/scan.html?loc=${encodeURIComponent(item.location)}&asset=${encodeURIComponent(item.asset)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(scanLink)}`;
+            
+            document.getElementById('modalQr').src = qrUrl;
+            document.getElementById('assetModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('assetModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

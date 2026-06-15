@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTIH Admin Terminal</title>
+    
+    <script>
+        if (localStorage.getItem('rti_auth_role') !== 'admin') {
+            window.location.href = 'http://localhost:3000/index.html';
+        }
+        function logout() {
+            localStorage.removeItem('rti_auth_role');
+            window.location.href = 'http://localhost:3000/index.html';
+        }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a polished feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen text-slate-800 relative overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
+    
+    <div id="intro-overlay" class="fixed inset-0 bg-slate-50 z-[100] flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out opacity-100">
+        <div id="intro-content" class="flex flex-col items-center opacity-0 transform scale-95 transition-all duration-1000 ease-out">
+            <img src="rtihlogo1.png" alt="RTIH Tirupati" class="h-28 md:h-40 w-auto object-contain drop-shadow-xl" onerror="this.style.display='none'">
+            
+            <div id="intro-line" class="h-px w-0 bg-slate-300 my-8 transition-all duration-1000 ease-out"></div>
+            
+            <h2 id="intro-text" class="text-slate-500 tracking-[0.4em] text-xs md:text-sm font-bold uppercase opacity-0 transition-opacity duration-1000">
+                Asset Management System
+            </h2>
+        </div>
+    </div>
+    <div class="fixed top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full bg-gradient-to-br from-indigo-100/40 to-purple-100/40 blur-[120px] -z-10 pointer-events-none"></div>
+    <div class="fixed bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-gradient-to-tl from-emerald-50/40 to-teal-100/40 blur-[120px] -z-10 pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto p-6 md:p-8 lg:p-12 relative z-10">
+        
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200/60 pb-6 mb-8 mt-2">
+            <div class="flex items-center gap-5">
+                <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-slate-100">
+                    <img src="rtihlogo1.png" alt="RTIH Tirupati Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'">
+                </div>
+                <div>
+                    <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">System Controller</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <p class="text-xs font-medium text-slate-500 tracking-wide">Live Pipeline Active</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mt-4 md:mt-0">
+                <a href="http://localhost:3000/user.html" target="_blank" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm border border-slate-200 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    User Dashboard
+                </a>
+                <button onclick="logout()" class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl transition-all shadow-sm border border-red-100 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            <div onclick="setFilter('All')" class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-5 rounded-2xl shadow-lg shadow-slate-900/20 border border-slate-700 cursor-pointer transition transform hover:-translate-y-1 hover:shadow-xl group">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Inventory</p>
+                    <svg class="w-4 h-4 text-indigo-400 group-hover:text-indigo-300 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                </div>
+                <p id="stat-total" class="text-3xl font-black text-white mt-2 tracking-tight">0</p>
+            </div>
+            
+            <div class="bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Zones</p>
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <p id="stat-locs" class="text-3xl font-black text-slate-800 mt-2 tracking-tight">0</p>
+            </div>
+
+            <div onclick="setFilter('Electronics')" class="bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50 transition-all transform hover:-translate-y-1 hover:shadow-md group">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-indigo-600 transition">Electronics</p>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                </div>
+                <p id="stat-elec" class="text-3xl font-black text-slate-800 mt-2 tracking-tight">0</p>
+            </div>
+            
+            <div onclick="setFilter('Furniture')" class="bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 cursor-pointer hover:border-orange-300 hover:bg-orange-50/50 transition-all transform hover:-translate-y-1 hover:shadow-md group">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-orange-600 transition">Furniture</p>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <p id="stat-furn" class="text-3xl font-black text-slate-800 mt-2 tracking-tight">0</p>
+            </div>
+
+            <div onclick="setFilter('Appliances')" class="bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 cursor-pointer hover:border-sky-300 hover:bg-sky-50/50 transition-all transform hover:-translate-y-1 hover:shadow-md group">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-sky-600 transition">Appliances</p>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-sky-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <p id="stat-app" class="text-3xl font-black text-slate-800 mt-2 tracking-tight">0</p>
+            </div>
+
+            <div onclick="setFilter('General')" class="bg-white/80 backdrop-blur-md p-5 rounded-2xl shadow-sm border border-slate-200/60 cursor-pointer hover:border-pink-300 hover:bg-pink-50/50 transition-all transform hover:-translate-y-1 hover:shadow-md group">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-pink-600 transition">General</p>
+                    <svg class="w-4 h-4 text-slate-400 group-hover:text-pink-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                </div>
+                <p id="stat-gen" class="text-3xl font-black text-slate-800 mt-2 tracking-tight">0</p>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-slate-200 relative">
+                <button id="tab-form" onclick="switchTab('form')" class="px-6 py-2.5 text-sm font-bold rounded-lg bg-slate-900 text-white shadow-sm transition-all duration-200">Asset Data Entry</button>
+                <button id="tab-logs" onclick="switchTab('logs')" class="px-6 py-2.5 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200">Database Viewer</button>
+            </div>
+            
+            <button id="filterBadge" onclick="setFilter('All')" class="hidden px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg hover:from-indigo-600 hover:to-purple-600 transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                <span>Filter Active</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="relative">
+            
+            <div id="view-form" class="bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
+                <div class="px-8 py-5 border-b border-slate-100 bg-white/50 flex justify-between items-center">
+                    <h2 id="formTitle" class="text-sm font-bold uppercase tracking-widest text-slate-800">Ingest New Asset</h2>
+                    <span class="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-bold rounded uppercase tracking-wider border border-indigo-100">Secure Entry</span>
+                </div>
+                
+                <form id="ingestionForm" class="p-8 space-y-8">
+                    <div>
+                        <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest mb-4 flex items-center gap-2">
+                            <span class="h-px w-4 bg-slate-200"></span> Core Identification
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Location / Room <span class="text-red-500">*</span></label>
+                                <input type="text" id="location" list="locationOptions" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm">
+                                <datalist id="locationOptions"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Category <span class="text-red-500">*</span></label>
+                                <select id="category" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm appearance-none">
+                                    <option value="Electronics">Electronics</option>
+                                    <option value="Furniture">Furniture</option>
+                                    <option value="Appliances">Appliances</option>
+                                    <option value="General">General</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div class="md:col-span-2">
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Asset Label <span class="text-red-500">*</span></label>
+                                <input type="text" id="asset" required placeholder="e.g. Ergonomic Office Chair" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Quantity <span class="text-red-500">*</span></label>
+                                <input type="number" id="quantity" required min="1" placeholder="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm font-mono">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-black uppercase text-slate-400 tracking-widest mb-4 flex items-center gap-2">
+                            <span class="h-px w-4 bg-slate-200"></span> Financial & Lifecycle
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Purchase Date</label>
+                                <input type="date" id="purchaseDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Delivery Date</label>
+                                <input type="date" id="deliveryDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Put In Use Date</label>
+                                <input type="date" id="putInUseDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-600 focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Price (per unit)</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 font-bold">₹</span>
+                                    <input type="number" id="price" step="0.01" placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-9 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm font-mono">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold uppercase text-slate-500 mb-2">Depreciation Rate</label>
+                                <div class="relative">
+                                    <input type="number" id="depreciationRate" step="0.1" placeholder="10.0" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pr-9 text-sm focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all shadow-sm font-mono">
+                                    <span class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 font-bold">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50/50 text-center hover:bg-slate-50 transition duration-200 group">
+                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-200 group-hover:scale-110 transition-transform">
+                            <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-2 cursor-pointer">Attach Asset Photo</label>
+                        <input type="file" id="photoFile" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mx-auto transition-colors">
+                        <p class="text-[10px] text-slate-400 mt-3 font-medium">(Leave empty when editing to keep current photo)</p>
+                    </div>
+
+                    <div class="flex gap-4 pt-2">
+                        <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden flex-1 bg-white text-slate-700 font-bold py-3.5 rounded-xl text-sm border border-slate-200 hover:bg-slate-50 shadow-sm transition-all">Cancel Edit</button>
+                        <button type="submit" id="submitBtn" class="flex-[2] bg-gradient-to-r from-slate-900 to-slate-800 text-white font-bold py-3.5 rounded-xl hover:from-slate-800 hover:to-slate-700 shadow-lg shadow-slate-900/20 text-sm transition-all transform hover:-translate-y-0.5">Commit to Database</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="view-logs" class="hidden bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-2xl shadow-xl overflow-hidden flex-col h-[700px]">
+                <div class="px-8 py-5 border-b border-slate-100 bg-white/50 flex justify-between items-center">
+                    <h2 id="logHeaderTitle" class="text-sm font-bold uppercase tracking-widest text-slate-800">Verification Log (All Items)</h2>
+                    <div class="flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Sync</span>
+                    </div>
+                </div>
+                <div id="adminLogsContainer" class="overflow-y-auto flex-1 p-8 space-y-6 bg-slate-50/50 custom-scrollbar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 transition-opacity opacity-100">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 m-4 relative border border-white transform transition-transform scale-100">
+            <button onclick="closeModal()" class="absolute top-5 right-5 p-2 bg-slate-100 text-slate-400 hover:text-slate-900 hover:bg-slate-200 rounded-full transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            
+            <div class="text-center mb-6">
+                <span id="modalCategory" class="px-3 py-1 rounded-full text-[10px] font-black bg-indigo-50 text-indigo-600 uppercase tracking-widest border border-indigo-100 mb-3 inline-block">Category</span>
+                <h3 id="modalAsset" class="text-2xl font-black text-slate-900 tracking-tight">Asset Name</h3>
+                <p id="modalLocation" class="text-sm text-slate-500 mt-1 font-medium">Location</p>
+            </div>
+
+            <div class="space-y-5">
+                <div class="aspect-video bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/60 flex items-center justify-center shadow-inner">
+                    <img id="modalPhoto" src="" alt="Asset" class="object-cover w-full h-full hidden">
+                    <div id="noPhotoText" class="text-center">
+                        <svg class="w-8 h-8 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">No Photo Available</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-5">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">System Tag</p>
+                            <p id="modalId" class="text-xs font-mono font-bold text-slate-700 bg-white px-2.5 py-1 rounded-md border border-slate-200 mb-3 inline-block shadow-sm">TAG-000</p>
+
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quantity</p>
+                            <p id="modalQty" class="text-3xl font-black text-slate-900 tracking-tight">0</p>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
+                            <img id="modalQr" src="" alt="QR Code" class="w-24 h-24 rounded-lg">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 border-t border-slate-200 pt-4">
+                        <div><span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Price</span><p id="modalPrice" class="text-sm font-bold text-slate-700 font-mono">N/A</p></div>
+                        <div><span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Depreciation</span><p id="modalDep" class="text-sm font-bold text-slate-700 font-mono">N/A</p></div>
+                        <div><span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Purchased</span><p id="modalPurchased" class="text-sm font-bold text-slate-700">N/A</p></div>
+                        <div><span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">In Use</span><p id="modalPutInUse" class="text-sm font-bold text-slate-700">N/A</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
+        <div class="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        </div>
+        <p id="toastMsg" class="text-sm font-bold">Data Synced Successfully!</p>
+    </div>
+
+    <script>
+        let adminInventory = [];
+        let editingId = null;
+        let currentFilter = 'All';
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('svg');
+            const iconBg = toast.querySelector('div');
+            
+            document.getElementById('toastMsg').innerText = message;
+            
+            if (isError) {
+                iconBg.className = "w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center";
+                icon.className = "w-4 h-4 text-red-400";
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>`;
+            } else {
+                iconBg.className = "w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center";
+                icon.className = "w-4 h-4 text-emerald-400";
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`;
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function switchTab(tab) {
+            const formView = document.getElementById('view-form');
+            const logsView = document.getElementById('view-logs');
+            const tabFormBtn = document.getElementById('tab-form');
+            const tabLogsBtn = document.getElementById('tab-logs');
+
+            if (tab === 'form') {
+                formView.classList.remove('hidden'); logsView.classList.add('hidden'); logsView.classList.remove('flex');
+                tabFormBtn.className = "px-6 py-2.5 text-sm font-bold rounded-lg bg-slate-900 text-white shadow-sm transition-all duration-200";
+                tabLogsBtn.className = "px-6 py-2.5 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200";
+            } else {
+                logsView.classList.remove('hidden'); logsView.classList.add('flex'); formView.classList.add('hidden');
+                tabLogsBtn.className = "px-6 py-2.5 text-sm font-bold rounded-lg bg-slate-900 text-white shadow-sm transition-all duration-200";
+                tabFormBtn.className = "px-6 py-2.5 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all duration-200";
+            }
+        }
+
+        function setFilter(category) {
+            currentFilter = category;
+            const badge = document.getElementById('filterBadge');
+            const logTitle = document.getElementById('logHeaderTitle');
+            
+            if(category !== 'All') {
+                badge.classList.remove('hidden');
+                logTitle.innerText = `Verification Log (${category} Only)`;
+                logTitle.classList.add('text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-indigo-600', 'to-purple-600');
+                switchTab('logs');
+            } else {
+                badge.classList.add('hidden');
+                logTitle.innerText = "Verification Log (All Items)";
+                logTitle.classList.remove('text-transparent', 'bg-clip-text', 'bg-gradient-to-r', 'from-indigo-600', 'to-purple-600');
+            }
+            renderDashboard(); 
+        }
+
+        const eventSource = new EventSource('http://localhost:3000/api/inventory/stream');
+
+        eventSource.onmessage = function(event) {
+            adminInventory = JSON.parse(event.data);
+            renderDashboard(); 
+        };
+
+        function renderDashboard() {
+            let totalQty = 0; 
+            let counts = { Electronics: 0, Furniture: 0, Appliances: 0, General: 0 }; 
+            let globalRooms = new Set();
+            
+            adminInventory.forEach(item => {
+                totalQty += item.quantity;
+                globalRooms.add(item.location);
+                if(counts[item.category] !== undefined) counts[item.category] += item.quantity;
+            });
+
+            document.getElementById('stat-total').innerText = totalQty;
+            document.getElementById('stat-locs').innerText = globalRooms.size;
+            document.getElementById('stat-elec').innerText = counts.Electronics;
+            document.getElementById('stat-furn').innerText = counts.Furniture;
+            document.getElementById('stat-app').innerText = counts.Appliances;
+            document.getElementById('stat-gen').innerText = counts.General;
+
+            const datalist = document.getElementById('locationOptions');
+            datalist.innerHTML = ''; 
+            Array.from(globalRooms).sort().forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                datalist.appendChild(option);
+            });
+
+            const logContainer = document.getElementById('adminLogsContainer');
+            logContainer.innerHTML = '';
+
+            const dataToRender = (currentFilter === 'All') 
+                ? [...adminInventory].reverse() 
+                : [...adminInventory].reverse().filter(i => i.category === currentFilter);
+
+            if (dataToRender.length === 0) {
+                logContainer.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 mt-10"><svg class="w-12 h-12 mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg><p class="font-medium">No ${currentFilter === 'All' ? 'assets' : currentFilter.toLowerCase()} found.</p></div>`;
+                return;
+            }
+
+            const groupedLogs = {};
+            dataToRender.forEach(item => {
+                if (!groupedLogs[item.location]) groupedLogs[item.location] = [];
+                groupedLogs[item.location].push(item);
+            });
+
+            const sortedLocations = Object.keys(groupedLogs).sort();
+
+            sortedLocations.forEach(location => {
+                const itemsInLocation = groupedLogs[location];
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden mb-6 hover:shadow-md transition-shadow";
+
+                const headerHtml = `
+                    <div class="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="p-1.5 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-700 uppercase tracking-widest text-xs">${location}</h3>
+                        </div>
+                        <span class="bg-white border border-slate-200 text-slate-500 px-2.5 py-1 rounded-md text-[10px] font-bold tracking-widest shadow-sm">${itemsInLocation.length} Records</span>
+                    </div>
+                `;
+
+                let listHtml = `<ul class="divide-y divide-slate-50">`;
+                
+                itemsInLocation.forEach(item => {
+                    let photoHtml = `<div class="w-14 h-14 bg-slate-50 rounded-xl border border-slate-200/60 flex flex-col items-center justify-center text-[8px] font-bold text-slate-400 uppercase shrink-0 shadow-inner"><svg class="w-4 h-4 mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Img</div>`;
+                    
+                    if (item.photoUrl && item.photoUrl.length > 2) {
+                        let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                        photoHtml = `<img src="${displayUrl}" class="w-14 h-14 object-cover rounded-xl border border-slate-200 shadow-sm shrink-0">`;
+                    }
+
+                    let catColor = "bg-slate-100 text-slate-500 border-slate-200";
+                    if(item.category === "Electronics") catColor = "bg-indigo-50 text-indigo-600 border-indigo-100";
+                    if(item.category === "Furniture") catColor = "bg-orange-50 text-orange-600 border-orange-100";
+                    if(item.category === "Appliances") catColor = "bg-sky-50 text-sky-600 border-sky-100";
+                    if(item.category === "General") catColor = "bg-pink-50 text-pink-600 border-pink-100";
+
+                    listHtml += `
+                        <li class="p-5 hover:bg-slate-50/80 transition-colors group flex flex-col">
+                            <div class="flex items-center gap-5">
+                                <div class="flex items-center gap-5 flex-1 cursor-pointer" onclick="openAdminModal('${item.id}')">
+                                    ${photoHtml}
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition truncate">${item.asset}</p>
+                                        <div class="flex items-center gap-2 mt-1.5">
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${catColor}">${item.category}</span>
+                                            <span class="text-[10px] text-slate-400 font-mono tracking-wide">ID: TAG-${item.id.toString().slice(-6)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-right mr-4 pr-5 border-r border-slate-200">
+                                        <p class="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Qty</p>
+                                        <p class="text-lg font-black text-slate-900 leading-none font-mono">${item.quantity}</p>
+                                    </div>
+                                    <button onclick="triggerEdit('${item.id}')" class="p-2.5 text-indigo-600 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-xl transition-all shadow-sm opacity-0 group-hover:opacity-100 transform hover:-translate-y-0.5" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <button onclick="deleteAsset('${item.id}')" class="p-2.5 text-red-600 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-xl transition-all shadow-sm opacity-0 group-hover:opacity-100 transform hover:-translate-y-0.5" title="Delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                });
+                listHtml += `</ul>`;
+                groupDiv.innerHTML = headerHtml + listHtml;
+                logContainer.appendChild(groupDiv);
+            });
+        }
+
+        function openAdminModal(id) {
+            const item = adminInventory.find(i => i.id == id);
+            if (!item) return;
+
+            document.getElementById('modalAsset').innerText = item.asset;
+            document.getElementById('modalLocation').innerText = `Location: ${item.location}`;
+            document.getElementById('modalCategory').innerText = item.category;
+            document.getElementById('modalQty').innerText = item.quantity;
+            document.getElementById('modalId').innerText = `TAG-${item.id.toString().slice(-6)}`;
+
+            document.getElementById('modalPrice').innerText = item.price ? `₹${item.price}` : 'N/A';
+            document.getElementById('modalDep').innerText = item.depreciationRate ? `${item.depreciationRate}%` : 'N/A';
+            document.getElementById('modalPurchased').innerText = item.purchaseDate || 'N/A';
+            document.getElementById('modalPutInUse').innerText = item.putInUseDate || 'N/A';
+
+            const photoEl = document.getElementById('modalPhoto');
+            const noPhotoEl = document.getElementById('noPhotoText');
+            if (item.photoUrl && item.photoUrl.length > 2) {
+                let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                photoEl.src = displayUrl;
+                photoEl.classList.remove('hidden');
+                noPhotoEl.classList.add('hidden');
+            } else {
+                photoEl.classList.add('hidden');
+                noPhotoEl.classList.remove('hidden');
+            }
+
+            const scanLink = `http://localhost:3000/scan.html?loc=${encodeURIComponent(item.location)}&asset=${encodeURIComponent(item.asset)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(scanLink)}`;
+            
+            document.getElementById('modalQr').src = qrUrl;
+            document.getElementById('assetModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('assetModal').classList.add('hidden');
+        }
+
+        function triggerEdit(id) {
+            editingId = id;
+            const item = adminInventory.find(i => i.id == id);
+            
+            document.getElementById('location').value = item.location;
+            document.getElementById('category').value = item.category;
+            document.getElementById('asset').value = item.asset;
+            document.getElementById('quantity').value = item.quantity;
+            document.getElementById('purchaseDate').value = item.purchaseDate || "";
+            document.getElementById('deliveryDate').value = item.deliveryDate || "";
+            document.getElementById('putInUseDate').value = item.putInUseDate || "";
+            document.getElementById('price').value = item.price || "";
+            document.getElementById('depreciationRate').value = item.depreciationRate || "";
+            
+            document.getElementById('formTitle').innerText = "Edit Existing Asset";
+            document.getElementById('submitBtn').innerText = "Update Google Sheets";
+            document.getElementById('submitBtn').classList.replace('from-slate-900', 'from-indigo-600');
+            document.getElementById('submitBtn').classList.replace('to-slate-800', 'to-indigo-700');
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            switchTab('form');
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('ingestionForm').reset();
+            document.getElementById('formTitle').innerText = "Ingest New Asset";
+            document.getElementById('submitBtn').innerText = "Commit to Database";
+            document.getElementById('submitBtn').classList.replace('from-indigo-600', 'from-slate-900');
+            document.getElementById('submitBtn').classList.replace('to-indigo-700', 'to-slate-800');
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        async function deleteAsset(id) {
+            if (!confirm("Are you sure you want to permanently delete this asset?")) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/inventory/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error("Server rejected deletion");
+                showToast("Asset Deleted", true);
+            } catch (err) {
+                alert("Failed to delete. Ensure server is running.");
+            }
+        }
+
+        document.getElementById('ingestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            
+            btn.innerText = "Syncing with Database...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const formData = new FormData();
+                formData.append('location', document.getElementById('location').value);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('asset', document.getElementById('asset').value);
+                formData.append('quantity', document.getElementById('quantity').value);
+                formData.append('purchaseDate', document.getElementById('purchaseDate').value);
+                formData.append('deliveryDate', document.getElementById('deliveryDate').value);
+                formData.append('putInUseDate', document.getElementById('putInUseDate').value);
+                formData.append('price', document.getElementById('price').value);
+                formData.append('depreciationRate', document.getElementById('depreciationRate').value);
+
+                const fileInput = document.getElementById('photoFile');
+                if (fileInput.files.length > 0) {
+                    formData.append('photoFile', fileInput.files[0]);
+                }
+
+                const url = editingId ? `http://localhost:3000/api/inventory/${editingId}` : `http://localhost:3000/api/inventory`;
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, { method: method, body: formData });
+
+                if (res.ok) {
+                    cancelEdit();
+                    showToast("Database Updated Successfully!");
+                } else {
+                    throw new Error("Server returned an error");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Sync Failed: Could not connect to the server.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+    </script>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById('intro-overlay');
+            const content = document.getElementById('intro-content');
+            const line = document.getElementById('intro-line');
+            const text = document.getElementById('intro-text');
+            const body = document.body;
+
+            // Temporarily lock scrolling during intro
+            body.style.overflow = 'hidden';
+
+            // 1. Fade in the massive logo
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            }, 100);
+
+            // 2. Expand the elegant line and fade in the text
+            setTimeout(() => {
+                line.classList.remove('w-0');
+                line.classList.add('w-48', 'md:w-64');
+                text.classList.remove('opacity-0');
+                text.classList.add('opacity-100');
+            }, 800);
+
+            // 3. Fade out the intro overlay entirely
+            setTimeout(() => {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+                content.classList.remove('scale-100');
+                content.classList.add('scale-105'); 
+            }, 2600);
+
+            // 4. Remove overlay from DOM so buttons are clickable, restore scrolling
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                body.style.overflow = '';
+            }, 3600);
+        });
+    </script>
+</body>
+</html>

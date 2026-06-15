@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTIH Secure Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 font-sans min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+    
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20"></div>
+
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10">
+        <div class="px-8 py-10">
+            <div class="text-center mb-8">
+                <img src="/rtih-logo.png" alt="RTIH Logo" class="h-16 mx-auto mb-4 object-contain" onerror="this.style.display='none'">
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight">System Gateway</h1>
+                <p id="portal-desc" class="text-sm text-slate-500 mt-2">Select your portal to authenticate</p>
+            </div>
+
+            <div class="flex space-x-2 mb-8 bg-slate-100 p-1.5 rounded-lg border border-slate-200">
+                <button id="tab-admin" onclick="switchPortal('admin')" class="flex-1 py-2 text-sm font-bold rounded-md bg-slate-900 text-white shadow-sm transition-all duration-200">
+                    Admin Portal
+                </button>
+                <button id="tab-user" onclick="switchPortal('user')" class="flex-1 py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200">
+                    User Portal
+                </button>
+            </div>
+            
+            <form id="loginForm" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Username ID</label>
+                    <input type="text" id="username" required placeholder="Enter ID" class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Secure Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full border border-slate-200 rounded-lg p-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50 focus:bg-white">
+                </div>
+                
+                <div id="errorMsg" class="hidden bg-red-50 text-red-600 text-xs font-bold p-3 rounded-lg text-center border border-red-200 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>Authentication Failed. Try again.</span>
+                </div>
+
+                <button type="submit" id="authBtn" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-lg hover:bg-slate-800 shadow-lg transition transform hover:-translate-y-0.5 mt-4">
+                    Access Admin Terminal
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-slate-50 px-8 py-4 border-t border-slate-200 text-center">
+            <p id="hint-text" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Hint: ID: admin | Pass: admin123
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let currentPortal = 'admin'; // Defaults to admin
+
+        // This switches the look and feel based on which portal they choose
+        function switchPortal(portal) {
+            currentPortal = portal;
+            const tabAdmin = document.getElementById('tab-admin');
+            const tabUser = document.getElementById('tab-user');
+            const authBtn = document.getElementById('authBtn');
+            const hintText = document.getElementById('hint-text');
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Hide error message when switching tabs
+            errorMsg.classList.add('hidden');
+            document.getElementById('loginForm').reset();
+
+            if (portal === 'admin') {
+                // Admin Styling
+                tabAdmin.className = "flex-1 py-2 text-sm font-bold rounded-md bg-slate-900 text-white shadow-sm transition-all duration-200";
+                tabUser.className = "flex-1 py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200";
+                
+                authBtn.className = "w-full bg-slate-900 text-white font-bold py-3.5 rounded-lg hover:bg-slate-800 shadow-lg transition transform hover:-translate-y-0.5 mt-4";
+                authBtn.innerText = "Access Admin Terminal";
+                hintText.innerText = "Hint: ID: admin | Pass: admin123";
+            } else {
+                // User Styling
+                tabUser.className = "flex-1 py-2 text-sm font-bold rounded-md bg-indigo-600 text-white shadow-sm transition-all duration-200";
+                tabAdmin.className = "flex-1 py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-200/50 transition-all duration-200";
+                
+                authBtn.className = "w-full bg-indigo-600 text-white font-bold py-3.5 rounded-lg hover:bg-indigo-700 shadow-lg transition transform hover:-translate-y-0.5 mt-4";
+                authBtn.innerText = "Access User Dashboard";
+                hintText.innerText = "Hint: ID: staff | Pass: user123";
+            }
+        }
+
+        // Logic to check passwords and handle smart routing
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Look at the URL to see if they came from a QR Code scan
+            const urlParams = new URLSearchParams(window.location.search);
+            const pendingRedirect = urlParams.get('redirect');
+
+            if (currentPortal === 'admin') {
+                if (user === 'admin' && pass === 'admin123') {
+                    localStorage.setItem('rti_auth_role', 'admin');
+                    // If they scanned a QR code, send them back to it. Otherwise, load the Admin panel.
+                    window.location.href = pendingRedirect ? pendingRedirect : '/admin.html'; 
+                } else {
+                    errorMsg.classList.remove('hidden');
+                    document.getElementById('password').value = '';
+                }
+            } else if (currentPortal === 'user') {
+                if (user === 'staff' && pass === 'user123') {
+                    localStorage.setItem('rti_auth_role', 'user');
+                    // If they scanned a QR code, send them back to it. Otherwise, load the User panel.
+                    window.location.href = pendingRedirect ? pendingRedirect : '/user.html'; 
+                } else {
+                    errorMsg.classList.remove('hidden');
+                    document.getElementById('password').value = '';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTIH Admin Terminal | Warin</title>
+    
+    <script>
+        // Security Lock
+        if (localStorage.getItem('rti_auth_role') !== 'admin') {
+            window.location.href = 'http://localhost:3000/index.html';
+        }
+        function logout() {
+            localStorage.removeItem('rti_auth_role');
+            window.location.href = 'http://localhost:3000/index.html';
+        }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .shadow-premium { box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 antialiased selection:bg-slate-200 selection:text-slate-900 overflow-hidden" id="body-container">
+    
+    <!-- 🎬 CINEMATIC INTRO REVEAL OVERLAY -->
+    <div id="intro-overlay" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center transition-all duration-1000 ease-in-out">
+        <div id="intro-content" class="flex flex-col items-center opacity-0 transform scale-95 transition-all duration-1000 ease-out">
+            <!-- Massive Logo -->
+            <img src="image_292825.png" alt="RTIH Tirupati" class="h-28 md:h-40 w-auto object-contain drop-shadow-xl" onerror="this.style.display='none'">
+            
+            <!-- Expanding Line -->
+            <div id="intro-line" class="h-px w-0 bg-slate-300 my-8 transition-all duration-1000 ease-out"></div>
+            
+            <!-- Premium Subtitle -->
+            <h2 id="intro-text" class="text-slate-500 tracking-[0.4em] text-xs md:text-sm font-bold uppercase opacity-0 transition-opacity duration-1000">
+                Asset Management System
+            </h2>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT (Hidden initially by the overlay) -->
+    <div id="main-app" class="opacity-0 transition-opacity duration-1000">
+        
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <img src="image_292825.png" alt="RTIH Tirupati" class="h-9 w-auto object-contain" onerror="this.style.display='none'">
+                    <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+                    <h1 class="text-sm font-bold tracking-tight text-slate-500 hidden md:block uppercase tracking-widest">System Controller</h1>
+                    <div class="hidden md:flex items-center gap-1.5 ml-2 px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-full">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Live Sync</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="http://localhost:3000/user.html" target="_blank" class="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors px-3 py-2 flex items-center gap-1.5">
+                        User Dashboard
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                    <div class="w-px h-4 bg-slate-200"></div>
+                    <button onclick="logout()" class="text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors px-3 py-2">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                <div onclick="setFilter('All')" class="bg-slate-900 p-5 rounded-2xl shadow-premium border border-slate-800 cursor-pointer transition transform hover:-translate-y-0.5 group">
+                    <p class="text-[11px] font-semibold text-slate-400">Total Assets</p>
+                    <p id="stat-total" class="text-3xl font-bold text-white mt-1">0</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-premium border border-slate-200">
+                    <p class="text-[11px] font-semibold text-slate-500">Locations</p>
+                    <p id="stat-locs" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div onclick="setFilter('Electronics')" class="bg-white p-5 rounded-2xl shadow-premium border border-slate-200 cursor-pointer hover:border-slate-300 transition transform hover:-translate-y-0.5 group">
+                    <p class="text-[11px] font-semibold text-slate-500 group-hover:text-slate-900 transition">Electronics</p>
+                    <p id="stat-elec" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div onclick="setFilter('Furniture')" class="bg-white p-5 rounded-2xl shadow-premium border border-slate-200 cursor-pointer hover:border-slate-300 transition transform hover:-translate-y-0.5 group">
+                    <p class="text-[11px] font-semibold text-slate-500 group-hover:text-slate-900 transition">Furniture</p>
+                    <p id="stat-furn" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div onclick="setFilter('Appliances')" class="bg-white p-5 rounded-2xl shadow-premium border border-slate-200 cursor-pointer hover:border-slate-300 transition transform hover:-translate-y-0.5 group">
+                    <p class="text-[11px] font-semibold text-slate-500 group-hover:text-slate-900 transition">Appliances</p>
+                    <p id="stat-app" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+                <div onclick="setFilter('General')" class="bg-white p-5 rounded-2xl shadow-premium border border-slate-200 cursor-pointer hover:border-slate-300 transition transform hover:-translate-y-0.5 group">
+                    <p class="text-[11px] font-semibold text-slate-500 group-hover:text-slate-900 transition">General</p>
+                    <p id="stat-gen" class="text-3xl font-bold text-slate-900 mt-1">0</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex space-x-1 bg-slate-200/60 p-1 rounded-xl">
+                    <button id="tab-form" onclick="switchTab('form')" class="px-5 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition-all">Data Entry</button>
+                    <button id="tab-logs" onclick="switchTab('logs')" class="px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-900 transition-all">Database Viewer</button>
+                </div>
+                <button id="filterBadge" onclick="setFilter('All')" class="hidden px-3 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-slate-800 transition-all flex items-center gap-1.5">
+                    <span>Clear Filter</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div>
+                <div id="view-form" class="bg-white border border-slate-200 rounded-2xl shadow-premium overflow-hidden transition-all duration-300">
+                    <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                        <h2 id="formTitle" class="text-base font-bold text-slate-900">Ingest New Asset</h2>
+                    </div>
+                    <form id="ingestionForm" class="p-8 space-y-8">
+                        <div>
+                            <h3 class="text-[11px] font-bold uppercase text-slate-400 tracking-widest mb-5">Core Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Location / Room *</label>
+                                    <input type="text" id="location" list="locationOptions" required class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm placeholder-slate-400">
+                                    <datalist id="locationOptions"></datalist>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Category *</label>
+                                    <select id="category" required class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm">
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Furniture">Furniture</option>
+                                        <option value="Appliances">Appliances</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Asset Label *</label>
+                                    <input type="text" id="asset" required class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm placeholder-slate-400">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Quantity *</label>
+                                    <input type="number" id="quantity" required min="1" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm placeholder-slate-400">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-[11px] font-bold uppercase text-slate-400 tracking-widest mb-5">Financial Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                <div><label class="block text-sm font-semibold text-slate-700 mb-2">Purchase Date</label><input type="date" id="purchaseDate" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-600 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm"></div>
+                                <div><label class="block text-sm font-semibold text-slate-700 mb-2">Delivery Date</label><input type="date" id="deliveryDate" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-600 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm"></div>
+                                <div><label class="block text-sm font-semibold text-slate-700 mb-2">Put In Use</label><input type="date" id="putInUseDate" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-600 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm"></div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Price (per unit)</label>
+                                    <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 font-medium">₹</span><input type="number" id="price" step="0.01" class="w-full bg-white border border-slate-300 rounded-xl p-3 pl-8 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-2">Depreciation Rate</label>
+                                    <div class="relative"><input type="number" id="depreciationRate" step="0.1" class="w-full bg-white border border-slate-300 rounded-xl p-3 pr-8 text-sm focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition shadow-sm"><span class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 font-medium">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border-2 border-dashed border-slate-300 rounded-2xl p-8 bg-slate-50 text-center hover:bg-slate-100 transition duration-200">
+                            <label class="block text-sm font-semibold text-slate-700 mb-2 cursor-pointer">Attach Asset Photo</label>
+                            <input type="file" id="photoFile" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-800 hover:file:bg-slate-300 cursor-pointer mx-auto transition-colors">
+                            <p class="text-[11px] text-slate-400 mt-3">(Leave empty when editing to keep current photo)</p>
+                        </div>
+                        <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                            <button type="button" id="cancelBtn" onclick="cancelEdit()" class="hidden px-6 py-3 bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-50 transition shadow-sm">Cancel</button>
+                            <button type="submit" id="submitBtn" class="px-8 py-3 bg-slate-900 text-white font-semibold rounded-xl text-sm hover:bg-slate-800 transition shadow-sm">Commit to Database</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="view-logs" class="hidden bg-white border border-slate-200 rounded-2xl shadow-premium overflow-hidden flex-col h-[700px]">
+                    <div class="px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+                        <h2 id="logHeaderTitle" class="text-base font-bold text-slate-900">Verification Log</h2>
+                    </div>
+                    <div id="adminLogsContainer" class="overflow-y-auto flex-1 p-8 space-y-6 bg-slate-50/50"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assetModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] hidden flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 transform transition-all">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-white">
+                <span id="modalCategory" class="text-xs font-semibold text-slate-500">Category</span>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-800 transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-6">
+                <h3 id="modalAsset" class="text-2xl font-bold text-slate-900 mb-1">Asset Name</h3>
+                <p id="modalLocation" class="text-sm text-slate-500 mb-6">Location</p>
+                <div class="aspect-video bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center mb-6">
+                    <img id="modalPhoto" src="" alt="Asset" class="object-cover w-full h-full hidden">
+                    <span id="noPhotoText" class="text-sm font-medium text-slate-400">No Photo Attached</span>
+                </div>
+                <div class="flex items-start justify-between bg-[#f8fafc] p-5 rounded-xl border border-slate-200">
+                    <div class="space-y-4">
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">System ID</p><p id="modalId" class="text-sm font-medium text-slate-900 mt-1">TAG-000</p></div>
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quantity</p><p id="modalQty" class="text-2xl font-bold text-slate-900 mt-1">0</p></div>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm"><img id="modalQr" src="" alt="QR Code" class="w-20 h-20"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-6 px-2">
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Price</span><p id="modalPrice" class="text-sm font-medium text-slate-900 mt-1">N/A</p></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Depreciation</span><p id="modalDep" class="text-sm font-medium text-slate-900 mt-1">N/A</p></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Purchased</span><p id="modalPurchased" class="text-sm font-medium text-slate-900 mt-1">N/A</p></div>
+                    <div><span class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Use</span><p id="modalPutInUse" class="text-sm font-medium text-slate-900 mt-1">N/A</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
+        <svg id="toastIcon" class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <p id="toastMsg" class="text-sm font-medium">Data Synced</p>
+    </div>
+
+    <!-- 🎬 SCRIPT FOR CINEMATIC INTRO -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById('intro-overlay');
+            const content = document.getElementById('intro-content');
+            const line = document.getElementById('intro-line');
+            const text = document.getElementById('intro-text');
+            const mainApp = document.getElementById('main-app');
+            const bodyContainer = document.getElementById('body-container');
+
+            // 1. Fade in the massive logo
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            }, 100);
+
+            // 2. Expand the elegant line and fade in the text
+            setTimeout(() => {
+                line.classList.remove('w-0');
+                line.classList.add('w-48', 'md:w-64');
+                text.classList.remove('opacity-0');
+                text.classList.add('opacity-100');
+            }, 800);
+
+            // 3. Fade out the intro overlay & fade in the main dashboard
+            setTimeout(() => {
+                overlay.classList.remove('bg-white');
+                overlay.classList.add('bg-transparent', 'backdrop-blur-none');
+                content.classList.replace('opacity-100', 'opacity-0');
+                content.classList.replace('scale-100', 'scale-105');
+                
+                mainApp.classList.remove('opacity-0');
+                mainApp.classList.add('opacity-100');
+            }, 2600);
+
+            // 4. Remove overlay from DOM so buttons are clickable, restore scrolling
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                bodyContainer.classList.remove('overflow-hidden');
+            }, 3600);
+        });
+    </script>
+
+    <script>
+        let adminInventory = [];
+        let editingId = null;
+        let currentFilter = 'All';
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            
+            document.getElementById('toastMsg').innerText = message;
+            
+            if (isError) {
+                icon.className = "w-5 h-5 text-red-400";
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>`;
+            } else {
+                icon.className = "w-5 h-5 text-emerald-400";
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>`;
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        }
+
+        function switchTab(tab) {
+            const formView = document.getElementById('view-form');
+            const logsView = document.getElementById('view-logs');
+            const tabFormBtn = document.getElementById('tab-form');
+            const tabLogsBtn = document.getElementById('tab-logs');
+
+            if (tab === 'form') {
+                formView.classList.remove('hidden'); logsView.classList.add('hidden'); logsView.classList.remove('flex');
+                tabFormBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition-all";
+                tabLogsBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-900 transition-all";
+            } else {
+                logsView.classList.remove('hidden'); logsView.classList.add('flex'); formView.classList.add('hidden');
+                tabLogsBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg bg-white text-slate-900 shadow-sm transition-all";
+                tabFormBtn.className = "px-5 py-2 text-sm font-semibold rounded-lg text-slate-500 hover:text-slate-900 transition-all";
+            }
+        }
+
+        function setFilter(category) {
+            currentFilter = category;
+            const badge = document.getElementById('filterBadge');
+            const logTitle = document.getElementById('logHeaderTitle');
+            
+            if(category !== 'All') {
+                badge.classList.remove('hidden');
+                logTitle.innerText = `Verification Log: ${category}`;
+                switchTab('logs');
+            } else {
+                badge.classList.add('hidden');
+                logTitle.innerText = "Verification Log";
+            }
+            renderDashboard(); 
+        }
+
+        const eventSource = new EventSource('http://localhost:3000/api/inventory/stream');
+
+        eventSource.onmessage = function(event) {
+            adminInventory = JSON.parse(event.data);
+            renderDashboard(); 
+        };
+
+        function renderDashboard() {
+            let totalQty = 0; 
+            let counts = { Electronics: 0, Furniture: 0, Appliances: 0, General: 0 }; 
+            let globalRooms = new Set();
+            
+            adminInventory.forEach(item => {
+                totalQty += item.quantity;
+                globalRooms.add(item.location);
+                if(counts[item.category] !== undefined) counts[item.category] += item.quantity;
+            });
+
+            document.getElementById('stat-total').innerText = totalQty;
+            document.getElementById('stat-locs').innerText = globalRooms.size;
+            document.getElementById('stat-elec').innerText = counts.Electronics;
+            document.getElementById('stat-furn').innerText = counts.Furniture;
+            document.getElementById('stat-app').innerText = counts.Appliances;
+            document.getElementById('stat-gen').innerText = counts.General;
+
+            const datalist = document.getElementById('locationOptions');
+            datalist.innerHTML = ''; 
+            Array.from(globalRooms).sort().forEach(loc => {
+                const option = document.createElement('option');
+                option.value = loc;
+                datalist.appendChild(option);
+            });
+
+            const logContainer = document.getElementById('adminLogsContainer');
+            logContainer.innerHTML = '';
+
+            const dataToRender = (currentFilter === 'All') 
+                ? [...adminInventory].reverse() 
+                : [...adminInventory].reverse().filter(i => i.category === currentFilter);
+
+            if (dataToRender.length === 0) {
+                logContainer.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 text-sm">No assets found.</div>`;
+                return;
+            }
+
+            const groupedLogs = {};
+            dataToRender.forEach(item => {
+                if (!groupedLogs[item.location]) groupedLogs[item.location] = [];
+                groupedLogs[item.location].push(item);
+            });
+
+            Object.keys(groupedLogs).sort().forEach(location => {
+                const itemsInLocation = groupedLogs[location];
+                const groupDiv = document.createElement('div');
+                groupDiv.className = "bg-white border border-slate-200 rounded-xl overflow-hidden mb-6";
+
+                const headerHtml = `
+                    <div class="bg-slate-50 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-semibold text-slate-800 text-sm">${location}</h3>
+                        <span class="text-xs font-medium text-slate-500">${itemsInLocation.length} Records</span>
+                    </div>
+                `;
+
+                let listHtml = `<ul class="divide-y divide-slate-100">`;
+                
+                itemsInLocation.forEach(item => {
+                    let photoHtml = `<div class="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center text-[10px] text-slate-400 shrink-0">No Img</div>`;
+                    
+                    if (item.photoUrl && item.photoUrl.length > 2) {
+                        let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                        photoHtml = `<img src="${displayUrl}" class="w-12 h-12 object-cover rounded-lg border border-slate-200 shrink-0">`;
+                    }
+
+                    listHtml += `
+                        <li class="p-4 hover:bg-[#f8fafc] transition-colors group flex items-center justify-between">
+                            <div class="flex items-center gap-4 cursor-pointer flex-1" onclick="openAdminModal('${item.id}')">
+                                ${photoHtml}
+                                <div>
+                                    <p class="text-sm font-semibold text-slate-900">${item.asset}</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                                        <span class="text-xs text-slate-500">${item.category}</span>
+                                        <span class="text-xs text-slate-300">•</span>
+                                        <span class="text-[10px] text-slate-400 font-mono">ID-${item.id.toString().slice(-6)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="text-right mr-2">
+                                    <p class="text-[10px] text-slate-400 uppercase font-semibold">Qty</p>
+                                    <p class="text-sm font-bold text-slate-900">${item.quantity}</p>
+                                </div>
+                                <div class="flex opacity-0 group-hover:opacity-100 transition-opacity gap-1 border-l border-slate-200 pl-4">
+                                    <button onclick="triggerEdit('${item.id}')" class="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                                    <button onclick="deleteAsset('${item.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </div>
+                            </div>
+                        </li>
+                    `;
+                });
+                listHtml += `</ul>`;
+                groupDiv.innerHTML = headerHtml + listHtml;
+                logContainer.appendChild(groupDiv);
+            });
+        }
+
+        function openAdminModal(id) {
+            const item = adminInventory.find(i => i.id == id);
+            if (!item) return;
+
+            document.getElementById('modalAsset').innerText = item.asset;
+            document.getElementById('modalLocation').innerText = item.location;
+            document.getElementById('modalCategory').innerText = item.category;
+            document.getElementById('modalQty').innerText = item.quantity;
+            document.getElementById('modalId').innerText = `TAG-${item.id.toString().slice(-6)}`;
+
+            document.getElementById('modalPrice').innerText = item.price ? `₹${item.price}` : 'N/A';
+            document.getElementById('modalDep').innerText = item.depreciationRate ? `${item.depreciationRate}%` : 'N/A';
+            document.getElementById('modalPurchased').innerText = item.purchaseDate || 'N/A';
+            document.getElementById('modalPutInUse').innerText = item.putInUseDate || 'N/A';
+
+            const photoEl = document.getElementById('modalPhoto');
+            const noPhotoEl = document.getElementById('noPhotoText');
+            if (item.photoUrl && item.photoUrl.length > 2) {
+                let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                photoEl.src = displayUrl;
+                photoEl.classList.remove('hidden');
+                noPhotoEl.classList.add('hidden');
+            } else {
+                photoEl.classList.add('hidden');
+                noPhotoEl.classList.remove('hidden');
+            }
+
+            const scanLink = `http://localhost:3000/scan.html?loc=${encodeURIComponent(item.location)}&asset=${encodeURIComponent(item.asset)}`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(scanLink)}`;
+            
+            document.getElementById('modalQr').src = qrUrl;
+            document.getElementById('assetModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('assetModal').classList.add('hidden');
+        }
+
+        function triggerEdit(id) {
+            editingId = id;
+            const item = adminInventory.find(i => i.id == id);
+            
+            document.getElementById('location').value = item.location;
+            document.getElementById('category').value = item.category;
+            document.getElementById('asset').value = item.asset;
+            document.getElementById('quantity').value = item.quantity;
+            document.getElementById('purchaseDate').value = item.purchaseDate || "";
+            document.getElementById('deliveryDate').value = item.deliveryDate || "";
+            document.getElementById('putInUseDate').value = item.putInUseDate || "";
+            document.getElementById('price').value = item.price || "";
+            document.getElementById('depreciationRate').value = item.depreciationRate || "";
+            
+            document.getElementById('formTitle').innerText = "Edit Asset";
+            document.getElementById('submitBtn').innerText = "Update Record";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+            switchTab('form');
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('ingestionForm').reset();
+            document.getElementById('formTitle').innerText = "Ingest New Asset";
+            document.getElementById('submitBtn').innerText = "Commit to Database";
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        async function deleteAsset(id) {
+            if (!confirm("Delete this asset permanently?")) return;
+            try {
+                const res = await fetch(`http://localhost:3000/api/inventory/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error("Server error");
+                showToast("Asset Deleted", true);
+            } catch (err) {
+                alert("Failed to delete. Server running?");
+            }
+        }
+
+        document.getElementById('ingestionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerText;
+            
+            btn.innerText = "Syncing...";
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+
+            try {
+                const formData = new FormData();
+                formData.append('location', document.getElementById('location').value);
+                formData.append('category', document.getElementById('category').value);
+                formData.append('asset', document.getElementById('asset').value);
+                formData.append('quantity', document.getElementById('quantity').value);
+                formData.append('purchaseDate', document.getElementById('purchaseDate').value);
+                formData.append('deliveryDate', document.getElementById('deliveryDate').value);
+                formData.append('putInUseDate', document.getElementById('putInUseDate').value);
+                formData.append('price', document.getElementById('price').value);
+                formData.append('depreciationRate', document.getElementById('depreciationRate').value);
+
+                const fileInput = document.getElementById('photoFile');
+                if (fileInput.files.length > 0) formData.append('photoFile', fileInput.files[0]);
+
+                const url = editingId ? `http://localhost:3000/api/inventory/${editingId}` : `http://localhost:3000/api/inventory`;
+                const method = editingId ? 'PUT' : 'POST';
+
+                const res = await fetch(url, { method: method, body: formData });
+
+                if (res.ok) {
+                    cancelEdit();
+                    showToast("Database Updated");
+                } else {
+                    throw new Error("Server error");
+                }
+            } catch (err) {
+                showToast("Sync Failed", true);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
+        });
+    </script>
+</body>
+</html>
