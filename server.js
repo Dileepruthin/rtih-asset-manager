@@ -17,10 +17,8 @@ app.use((req, res, next) => {
 
 const SPREADSHEET_ID = '1XlYosWoHnu9zEvw5bJkGBcEMtrhAhsszA84obI3YzOg'; 
 
-const uploadDir = path.join(__dirname, 'public/uploads');
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+// 🔥 THE VERCEL FIX: We only write to the temporary folder! No 'mkdirSync' allowed.
+const uploadDir = '/tmp';
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) { cb(null, uploadDir) },
@@ -167,5 +165,4 @@ app.delete('/api/inventory/:id', async (req, res) => {
     }
 });
 
-// 🔥 THE VERCEL FIX: Exporting the app instead of listening to a local port
 module.exports = app;
