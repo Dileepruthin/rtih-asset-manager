@@ -17,8 +17,11 @@ app.use((req, res, next) => {
 
 const SPREADSHEET_ID = '1XlYosWoHnu9zEvw5bJkGBcEMtrhAhsszA84obI3YzOg'; 
 
-// 🔥 THE VERCEL FIX: We only write to the temporary folder! No 'mkdirSync' allowed.
-const uploadDir = '/tmp';
+// 🔥 RENDER FIX 1: We are using a real hard drive again, so photos will work!
+const uploadDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadDir)){
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) { cb(null, uploadDir) },
@@ -165,4 +168,7 @@ app.delete('/api/inventory/:id', async (req, res) => {
     }
 });
 
-module.exports = app;
+// 🔥 RENDER FIX 2: We need an actual server listening on a port to keep the stream alive!
+app.listen(port, () => {
+    console.log(`\n🚀 RTIH Controller Engaged on Port ${port}`);
+});
