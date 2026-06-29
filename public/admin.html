@@ -6,12 +6,13 @@
     <title>RTIH Admin Terminal</title>
     
     <script>
+        const BASE_URL = window.location.origin;
         if (localStorage.getItem('rti_auth_role') !== 'admin') {
-            window.location.href = 'http://localhost:3000/index.html';
+            window.location.href = `${BASE_URL}/index.html`;
         }
         function logout() {
             localStorage.removeItem('rti_auth_role');
-            window.location.href = 'http://localhost:3000/index.html';
+            window.location.href = `${BASE_URL}/index.html`;
         }
     </script>
 
@@ -59,7 +60,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-3 mt-4 md:mt-0">
-                <a href="http://localhost:3000/user.html" target="_blank" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm border border-slate-200 flex items-center gap-2">
+                <a href="/user.html" target="_blank" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm border border-slate-200 flex items-center gap-2">
                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                     User Dashboard
                 </a>
@@ -295,6 +296,7 @@
         let adminInventory = [];
         let editingId = null;
         let currentFilter = 'All';
+        const API_BASE_URL = window.location.origin;
 
         function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
@@ -354,7 +356,7 @@
             renderDashboard(); 
         }
 
-        const eventSource = new EventSource('http://localhost:3000/api/inventory/stream');
+        const eventSource = new EventSource(`${API_BASE_URL}/api/inventory/stream`);
 
         eventSource.onmessage = function(event) {
             adminInventory = JSON.parse(event.data);
@@ -430,7 +432,14 @@
                     let photoHtml = `<div class="w-14 h-14 bg-slate-50 rounded-xl border border-slate-200/60 flex flex-col items-center justify-center text-[8px] font-bold text-slate-400 uppercase shrink-0 shadow-inner"><svg class="w-4 h-4 mb-0.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>Img</div>`;
                     
                     if (item.photoUrl && item.photoUrl.length > 2) {
-                        let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                        let displayUrl = item.photoUrl;
+                        if (displayUrl.startsWith('data:')) {
+                            displayUrl = displayUrl;
+                        } else if (displayUrl.startsWith('http')) {
+                            displayUrl = displayUrl;
+                        } else {
+                            displayUrl = BASE_URL + displayUrl;
+                        }
                         photoHtml = `<img src="${displayUrl}" class="w-14 h-14 object-cover rounded-xl border border-slate-200 shadow-sm shrink-0">`;
                     }
 
@@ -493,7 +502,10 @@
             const photoEl = document.getElementById('modalPhoto');
             const noPhotoEl = document.getElementById('noPhotoText');
             if (item.photoUrl && item.photoUrl.length > 2) {
-                let displayUrl = item.photoUrl.startsWith('http') ? item.photoUrl : 'http://localhost:3000' + item.photoUrl;
+                let displayUrl = item.photoUrl;
+                if (!displayUrl.startsWith('data:') && !displayUrl.startsWith('http')) {
+                    displayUrl = BASE_URL + displayUrl;
+                }
                 photoEl.src = displayUrl;
                 photoEl.classList.remove('hidden');
                 noPhotoEl.classList.add('hidden');
@@ -502,7 +514,7 @@
                 noPhotoEl.classList.remove('hidden');
             }
 
-            const scanLink = `http://localhost:3000/scan.html?loc=${encodeURIComponent(item.location)}&asset=${encodeURIComponent(item.asset)}`;
+            const scanLink = `${BASE_URL}/scan.html?loc=${encodeURIComponent(item.location)}&asset=${encodeURIComponent(item.asset)}`;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(scanLink)}`;
             
             document.getElementById('modalQr').src = qrUrl;
@@ -548,11 +560,15 @@
         async function deleteAsset(id) {
             if (!confirm("Are you sure you want to permanently delete this asset?")) return;
             try {
-                const res = await fetch(`http://localhost:3000/api/inventory/${id}`, { method: 'DELETE' });
-                if (!res.ok) throw new Error("Server rejected deletion");
+                const res = await fetch(`${API_BASE_URL}/api/inventory/${id}`, { method: 'DELETE', cache: 'no-store' });
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(errorText || "Server rejected deletion");
+                }
                 showToast("Asset Deleted", true);
             } catch (err) {
-                alert("Failed to delete. Ensure server is running.");
+                console.error(err);
+                alert(`Delete failed: ${err.message || 'Ensure server is running.'}`);
             }
         }
 
@@ -582,20 +598,32 @@
                     formData.append('photoFile', fileInput.files[0]);
                 }
 
-                const url = editingId ? `http://localhost:3000/api/inventory/${editingId}` : `http://localhost:3000/api/inventory`;
+                const url = editingId ? `${API_BASE_URL}/api/inventory/${editingId}` : `${API_BASE_URL}/api/inventory`;
                 const method = editingId ? 'PUT' : 'POST';
 
-                const res = await fetch(url, { method: method, body: formData });
+                const res = await fetch(url, { method: method, body: formData, cache: 'no-store' });
 
                 if (res.ok) {
                     cancelEdit();
                     showToast("Database Updated Successfully!");
-                } else {
-                    throw new Error("Server returned an error");
+                    return;
                 }
+
+                let errorText = "Server returned an error";
+                try {
+                    const errorData = await res.json();
+                    if (errorData && errorData.error) {
+                        errorText = errorData.error;
+                    }
+                } catch {
+                    try {
+                        errorText = await res.text();
+                    } catch {}
+                }
+                throw new Error(errorText);
             } catch (err) {
                 console.error(err);
-                alert("Sync Failed: Could not connect to the server.");
+                alert(`Sync Failed: ${err.message || 'Could not connect to the server.'}`);
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;

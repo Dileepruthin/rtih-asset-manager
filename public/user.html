@@ -204,7 +204,11 @@
                 
                 let photoHtml = `<div class="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center text-[8px] font-bold text-slate-400 uppercase text-center">No Img</div>`;
                 if (item.photoUrl && item.photoUrl.length > 2) {
-                    photoHtml = `<img src="${item.photoUrl}" class="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200">`;
+                    const isRemoteUrl = /^https?:\/\//i.test(item.photoUrl);
+                    const isDataUrl = item.photoUrl.startsWith('data:');
+                    const isBlobUrl = item.photoUrl.startsWith('blob:');
+                    const displayUrl = isRemoteUrl || isDataUrl || isBlobUrl ? item.photoUrl : `${window.location.origin}${item.photoUrl}`;
+                    photoHtml = `<img src="${displayUrl}" class="w-12 h-12 object-cover rounded-lg shadow-sm border border-slate-200">`;
                 }
 
                 card.innerHTML = `
@@ -237,7 +241,11 @@
             const photoEl = document.getElementById('modalPhoto');
             const noPhotoEl = document.getElementById('noPhotoText');
             if (item.photoUrl && item.photoUrl.length > 2) {
-                photoEl.src = item.photoUrl;
+                const isRemoteUrl = /^https?:\/\//i.test(item.photoUrl);
+                const isDataUrl = item.photoUrl.startsWith('data:');
+                const isBlobUrl = item.photoUrl.startsWith('blob:');
+                const displayUrl = isRemoteUrl || isDataUrl || isBlobUrl ? item.photoUrl : `${window.location.origin}${item.photoUrl}`;
+                photoEl.src = displayUrl;
                 photoEl.classList.remove('hidden');
                 noPhotoEl.classList.add('hidden');
             } else {

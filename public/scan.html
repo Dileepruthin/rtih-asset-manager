@@ -6,12 +6,7 @@
     <title>Asset Verification | RTIH Secure</title>
 
     <script>
-        // Before the page even loads, check if the person holding the phone is an authorized employee
-        const role = localStorage.getItem('rti_auth_role');
-        if (role !== 'admin' && role !== 'user') {
-            // Hacker or unauthorized person detected. Boot them to the login screen immediately.
-            window.location.href = '/index.html'; 
-        }
+        // Allow QR scans to open the product details directly without passing through the login portal.
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -223,8 +218,12 @@
                     const photoEl = document.getElementById('scanPhoto');
                     const noPhotoEl = document.getElementById('noPhotoText');
                     if (finalItem.photoUrl && finalItem.photoUrl.length > 2) {
-                        // NOTE: Once deployed live, remove the IP hardcode below and use item.photoUrl directly
-                        photoEl.src = finalItem.photoUrl.startsWith('http') ? finalItem.photoUrl : 'http://192.168.100.64:3000' + finalItem.photoUrl;
+                        const isRemoteUrl = /^https?:\/\//i.test(finalItem.photoUrl);
+                        const isDataUrl = finalItem.photoUrl.startsWith('data:');
+                        const isBlobUrl = finalItem.photoUrl.startsWith('blob:');
+                        const displayUrl = isRemoteUrl || isDataUrl || isBlobUrl ? finalItem.photoUrl : `${window.location.origin}${finalItem.photoUrl}`;
+
+                        photoEl.src = displayUrl;
                         photoEl.classList.remove('hidden');
                         noPhotoEl.classList.add('hidden');
                     } else {

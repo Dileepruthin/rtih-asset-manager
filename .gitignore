@@ -7,3 +7,4 @@ node_modules/
 
 # Mac Junk Files
 .DS_Store
+.vercel
