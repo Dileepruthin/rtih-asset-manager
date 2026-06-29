@@ -27,8 +27,10 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const upload = multer({
-    storage: multer.diskStorage({
+// Use memory storage on Vercel (read-only FS), disk storage locally
+const storageConfig = isVercel 
+    ? multer.memoryStorage()  // Store in RAM on Vercel
+    : multer.diskStorage({     // Store on disk locally
         destination: function (_req, _file, cb) {
             cb(null, uploadDir);
         },
@@ -37,7 +39,10 @@ const upload = multer({
             const extension = path.extname(safeName) || '.jpg';
             cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`);
         }
-    }),
+    });
+
+const upload = multer({
+    storage: storageConfig,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -60,12 +65,25 @@ async function uploadPhotoToImgBB(file) {
         return '';
     }
     
-    if (!file || !file.path) return '';
+    if (!file) return '';
 
     try {
-        console.log('📤 Uploading to ImgBB...');
+        console.log('📤 Uploading to ImgBB...', { hasBuffer: !!file.buffer, hasPath: !!file.path });
         const formData = new FormData();
-        formData.append('image', fs.createReadStream(file.path));
+        
+        // Handle both memory storage (buffer) and disk storage (path)
+        if (file.buffer) {
+            // Vercel: file is in memory
+            console.log('💾 Using memory buffer for upload');
+            const blob = new Blob([file.buffer], { type: file.mimetype });
+            formData.append('image', blob, file.originalname);
+        } else if (file.path) {
+            // Local: file is on disk
+            console.log('📁 Using disk file for upload');
+            formData.append('image', fs.createReadStream(file.path));
+        } else {
+            throw new Error('No file data available');
+        }
 
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
             method: 'POST',
@@ -95,19 +113,21 @@ async function uploadPhotoToImgBB(file) {
 }
 
 async function createPhotoUrl(file) {
-    if (!file || !file.path) return '';
+    if (!file) return '';
 
     try {
-        // Try ImgBB first
+        // Try ImgBB first (always required on Vercel)
         const remoteUrl = await uploadPhotoToImgBB(file);
         if (remoteUrl) {
-            // Clean up the temp file after successful upload
-            try {
-                if (fs.existsSync(file.path)) {
-                    fs.unlinkSync(file.path);
+            // Clean up the temp file after successful upload (if it exists on disk)
+            if (file.path) {
+                try {
+                    if (fs.existsSync(file.path)) {
+                        fs.unlinkSync(file.path);
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Could not delete temp file:', err.message);
                 }
-            } catch (err) {
-                console.warn('⚠️ Could not delete temp file:', err.message);
             }
             return remoteUrl;
         }
@@ -115,6 +135,10 @@ async function createPhotoUrl(file) {
         // Fallback to local storage ONLY on local development (not Vercel)
         if (isVercel) {
             throw new Error('Cannot save images locally on Vercel. Image upload failed.');
+        }
+
+        if (!file.path) {
+            throw new Error('Cannot process memory buffer without disk fallback');
         }
 
         console.log('💾 Saving image locally (development mode)');
