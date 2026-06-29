@@ -7,7 +7,10 @@ const multer = require('multer');
 const sharp = require('sharp');
 
 const app = express();
-const port = process.env.PORT || 3000; 
+const port = process.env.PORT || 3000;
+const isVercel = !!process.env.VERCEL;
+
+console.log('Environment:', { isVercel, hasImgBB: !!process.env.IMG_BB_KEY }); 
 
 // THE MAGIC CONNECTION FIX: FORCES CHROME TO ALLOW THE SYNC
 app.use((req, res, next) => {
@@ -48,13 +51,19 @@ const upload = multer({
 
 async function uploadPhotoToImgBB(file) {
     const apiKey = process.env.IMG_BB_KEY;
+    
     if (!apiKey) {
-        console.warn('IMG_BB_KEY not configured, will use local storage');
+        if (isVercel) {
+            throw new Error('IMG_BB_KEY environment variable is required for image uploads on Vercel. Please set it in your Vercel project settings.');
+        }
+        console.warn('⚠️ IMG_BB_KEY not configured, falling back to local storage');
         return '';
     }
+    
     if (!file || !file.path) return '';
 
     try {
+        console.log('📤 Uploading to ImgBB...');
         const formData = new FormData();
         formData.append('image', fs.createReadStream(file.path));
 
@@ -64,15 +73,24 @@ async function uploadPhotoToImgBB(file) {
         });
 
         if (!response.ok) {
-            console.error('ImgBB upload failed with status:', response.status);
-            return '';
+            const error = await response.text();
+            console.error('❌ ImgBB upload failed with status:', response.status, error);
+            throw new Error(`ImgBB upload failed: ${response.status}`);
         }
 
         const payload = await response.json();
-        return payload?.data?.url || '';
+        if (!payload?.data?.url) {
+            throw new Error('ImgBB returned no image URL');
+        }
+        
+        console.log('✅ Image uploaded to ImgBB:', payload.data.url);
+        return payload.data.url;
     } catch (error) {
-        console.error('Failed to upload photo to ImgBB:', error.message);
-        return '';
+        console.error('❌ Failed to upload photo to ImgBB:', error.message);
+        if (isVercel) {
+            throw error; // Re-throw on Vercel - don't fall back to local storage
+        }
+        return ''; // Allow fallback on local development
     }
 }
 
@@ -80,14 +98,26 @@ async function createPhotoUrl(file) {
     if (!file || !file.path) return '';
 
     try {
+        // Try ImgBB first
         const remoteUrl = await uploadPhotoToImgBB(file);
         if (remoteUrl) {
-            if (fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path);
+            // Clean up the temp file after successful upload
+            try {
+                if (fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            } catch (err) {
+                console.warn('⚠️ Could not delete temp file:', err.message);
             }
             return remoteUrl;
         }
 
+        // Fallback to local storage ONLY on local development (not Vercel)
+        if (isVercel) {
+            throw new Error('Cannot save images locally on Vercel. Image upload failed.');
+        }
+
+        console.log('💾 Saving image locally (development mode)');
         const outputName = `${path.basename(file.filename, path.extname(file.filename || ''))}.webp`;
         const outputPath = path.join(uploadDir, outputName);
 
@@ -102,8 +132,8 @@ async function createPhotoUrl(file) {
 
         return `/uploads/${outputName}`;
     } catch (error) {
-        console.error('Failed to save uploaded photo:', error);
-        return '';
+        console.error('❌ Failed to save uploaded photo:', error.message);
+        throw error; // Throw error so frontend knows upload failed
     }
 }
 
@@ -220,9 +250,14 @@ app.post('/api/inventory', upload.single('photoFile'), async (req, res) => {
 
     let finalPhotoUrl = "";
     if (req.file) {
-        console.log('📸 Processing file:', req.file.filename);
-        finalPhotoUrl = await createPhotoUrl(req.file);
-        console.log('✅ Photo URL:', finalPhotoUrl);
+        try {
+            console.log('📸 Processing file:', req.file.filename);
+            finalPhotoUrl = await createPhotoUrl(req.file);
+            console.log('✅ Photo URL:', finalPhotoUrl);
+        } catch (photoError) {
+            console.error('❌ Photo upload failed:', photoError.message);
+            return res.status(400).json({ success: false, error: `Photo upload failed: ${photoError.message}` });
+        }
     }
 
     const newItem = {
@@ -287,9 +322,14 @@ app.put('/api/inventory/:id', upload.single('photoFile'), async (req, res) => {
 
         let finalPhotoUrl = existingItem.photoUrl;
         if (req.file) {
-            console.log('📸 Processing file:', req.file.filename);
-            finalPhotoUrl = await createPhotoUrl(req.file);
-            console.log('✅ Photo URL:', finalPhotoUrl);
+            try {
+                console.log('📸 Processing file:', req.file.filename);
+                finalPhotoUrl = await createPhotoUrl(req.file);
+                console.log('✅ Photo URL:', finalPhotoUrl);
+            } catch (photoError) {
+                console.error('❌ Photo upload failed:', photoError.message);
+                return res.status(400).json({ success: false, error: `Photo upload failed: ${photoError.message}` });
+            }
         }
 
         await sheets.spreadsheets.values.update({
